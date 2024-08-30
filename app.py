@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import time
 import os
+from sklearn.preprocessing import StandardScaler
 
 st.set_page_config(page_title="Dog Health Analysis", page_icon="🐶", layout="wide")
 
@@ -22,7 +23,17 @@ def load_model_and_scaler():
         with open('dog_health_model.pkl', 'rb') as f:
             model = pickle.load(f)
         with open('scaler.pkl', 'rb') as f:
-            scaler = pickle.load(f)
+            scaler_data = pickle.load(f)
+        
+        # Check if scaler_data is a numpy array
+        if isinstance(scaler_data, np.ndarray):
+            log_message("Scaler data is a numpy array. Creating StandardScaler.")
+            scaler = StandardScaler()
+            scaler.mean_ = scaler_data[0]
+            scaler.scale_ = scaler_data[1]
+        else:
+            scaler = scaler_data
+        
         load_time = time.time() - start_time
         log_message(f"Model and scaler loaded successfully in {load_time:.2f} seconds")
         return model, scaler
@@ -37,7 +48,7 @@ def load_model_and_scaler():
 
 log_message("Calling load_model_and_scaler()")
 model, scaler = load_model_and_scaler()
-log_message("Finished calling load_model_and_scaler()")
+log_message(f"Finished calling load_model_and_scaler(). Model type: {type(model)}, Scaler type: {type(scaler)}")
 
 # Function to make predictions
 def predict_dog_state(temperature, pulse_rate, heart_rate):
@@ -45,14 +56,19 @@ def predict_dog_state(temperature, pulse_rate, heart_rate):
         return "Error: Model or scaler not loaded"
     
     input_data = np.array([[temperature, pulse_rate, heart_rate]])
-    input_data_scaled = scaler.transform(input_data)
+    
+    try:
+        input_data_scaled = scaler.transform(input_data)
+    except Exception as e:
+        log_message(f"Error during scaling: {str(e)}")
+        return f"Error: Unable to scale input data - {str(e)}"
 
     try:
         state = model.predict(input_data_scaled)
         return state[0]
     except Exception as e:
         log_message(f"Error during prediction: {str(e)}")
-        return "Error: Unable to make prediction"
+        return f"Error: Unable to make prediction - {str(e)}"
 
 # Streamlit app layout
 st.title('Dog Health Analysis')
