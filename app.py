@@ -1,24 +1,55 @@
+import streamlit as st
+import pandas as pd
+import joblib
+import numpy as np
+
+# Load the trained model and scaler with error handling
+try:
+    model = joblib.load('dog_health_model.pkl')
+    scaler = joblib.load('scaler.pkl')
+    st.success("Model and scaler loaded successfully.")
+except Exception as e:
+    st.error(f"Error loading model or scaler: {e}")
+    st.stop()
+
+# Function to make predictions
 def predict_dog_state(temperature, pulse_rate, heart_rate):
-    log_message(f"Prediction requested for Temperature: {temperature}, Pulse Rate: {pulse_rate}, Heart Rate: {heart_rate}")
-    
-    if model is None or scaler is None:
-        log_message("Error: Model or scaler not loaded")
-        return "Error: Model or scaler not loaded"
-    
-    input_data = np.array([[temperature, pulse_rate, heart_rate]])
-    log_message(f"Input data shape: {input_data.shape}")
-    
+    input_data = pd.DataFrame([[temperature, pulse_rate, heart_rate]],
+                              columns=['temperature', 'pulse_rate', 'heart_rate'])
+
+    # Scale the numerical features
     try:
         input_data_scaled = scaler.transform(input_data)
-        log_message(f"Scaled input data shape: {input_data_scaled.shape}")
     except Exception as e:
-        log_message(f"Error during scaling: {str(e)}")
-        return f"Error: Unable to scale input data - {str(e)}"
+        st.error(f"Error during scaling: {e}")
+        return None
 
+    # Predict state
     try:
         state = model.predict(input_data_scaled)
-        log_message(f"Predicted state: {state[0]}")
         return state[0]
     except Exception as e:
-        log_message(f"Error during prediction: {str(e)}")
-        return f"Error: Unable to make prediction - {str(e)}"
+        st.error(f"Error during prediction: {e}")
+        return None
+
+# Streamlit app layout
+st.title('Dog Health Analysis')
+
+st.write('Enter the vital signs of your dog to determine its health status.')
+
+# Input fields for temperature, pulse rate, and heart rate
+temperature = st.number_input('Temperature (°F)', min_value=90.0, max_value=110.0, value=101.0, step=0.1)
+pulse_rate = st.number_input('Pulse Rate (beats per minute)', min_value=50, max_value=200, value=80)
+heart_rate = st.number_input('Heart Rate (beats per minute)', min_value=50, max_value=200, value=70)
+
+# Predict button
+if st.button('Predict Health State'):
+    predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
+    if predicted_state:
+        st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
+
+# Display normal ranges
+st.subheader("Normal Ranges for Reference:")
+st.write("Temperature: 99.5°F - 102.5°F")
+st.write("Pulse Rate: 70 - 120 beats per minute")
+st.write("Heart Rate: 60 - 100 beats per minute")
