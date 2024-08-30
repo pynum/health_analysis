@@ -3,13 +3,9 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# Load the trained model and scaler with error handling
-try:
-    model = joblib.load('dog_health_model.pkl')
-    scaler = joblib.load('scaler.pkl')
-except Exception as e:
-    st.error(f"Error loading model or scaler: {e}")
-    st.stop()
+# Load the trained model and scaler
+model = joblib.load('dog_health_model.pkl')
+scaler = joblib.load('scaler.pkl')
 
 # Function to make predictions
 def predict_dog_state(temperature, pulse_rate, heart_rate):
@@ -35,8 +31,12 @@ heart_rate = st.number_input('Heart Rate (beats per minute)', min_value=50, max_
 
 # Predict button
 if st.button('Predict Health State'):
-    predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
-    st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
+    try:
+        predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
+        st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        st.write("Please make sure the model and scaler files are in the same directory as this script.")
 
 # Display normal ranges
 st.subheader("Normal Ranges for Reference:")
