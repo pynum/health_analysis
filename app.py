@@ -7,7 +7,6 @@ import numpy as np
 try:
     model = joblib.load('dog_health_model.pkl')
     scaler = joblib.load('scaler.pkl')
-    st.success("Model and scaler loaded successfully.")
 except Exception as e:
     st.error(f"Error loading model or scaler: {e}")
     st.stop()
@@ -18,19 +17,11 @@ def predict_dog_state(temperature, pulse_rate, heart_rate):
                               columns=['temperature', 'pulse_rate', 'heart_rate'])
 
     # Scale the numerical features
-    try:
-        input_data_scaled = scaler.transform(input_data)
-    except Exception as e:
-        st.error(f"Error during scaling: {e}")
-        return None
+    input_data_scaled = scaler.transform(input_data)
 
     # Predict state
-    try:
-        state = model.predict(input_data_scaled)
-        return state[0]
-    except Exception as e:
-        st.error(f"Error during prediction: {e}")
-        return None
+    state = model.predict(input_data_scaled)
+    return state[0]
 
 # Streamlit app layout
 st.title('Dog Health Analysis')
@@ -45,8 +36,7 @@ heart_rate = st.number_input('Heart Rate (beats per minute)', min_value=50, max_
 # Predict button
 if st.button('Predict Health State'):
     predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
-    if predicted_state:
-        st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
+    st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
 
 # Display normal ranges
 st.subheader("Normal Ranges for Reference:")
