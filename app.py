@@ -1,53 +1,57 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import sklearn
 import pickle
+import time
+import os
 
-# Attempt to import joblib, with a fallback to pickle
-try:
-    import joblib
-except ImportError:
-    import pickle as joblib
-    st.warning("Using pickle instead of joblib. Consider installing joblib for better performance.")
+st.set_page_config(page_title="Dog Health Analysis", page_icon="🐶", layout="wide")
 
-st.write(f"scikit-learn version: {sklearn.__version__}")
+# Logging function
+def log_message(message):
+    st.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}")
+
+log_message("App started")
 
 # Load the trained model and scaler
 @st.cache_resource
 def load_model_and_scaler():
+    log_message("Attempting to load model and scaler")
     try:
+        start_time = time.time()
         with open('dog_health_model.pkl', 'rb') as f:
             model = pickle.load(f)
         with open('scaler.pkl', 'rb') as f:
             scaler = pickle.load(f)
+        load_time = time.time() - start_time
+        log_message(f"Model and scaler loaded successfully in {load_time:.2f} seconds")
         return model, scaler
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        log_message(f"File not found error: {str(e)}")
         st.error("Model or scaler file not found. Please ensure the files are in the correct location.")
         return None, None
     except Exception as e:
+        log_message(f"Error loading model or scaler: {str(e)}")
         st.error(f"Error loading model or scaler: {str(e)}")
         return None, None
 
+log_message("Calling load_model_and_scaler()")
 model, scaler = load_model_and_scaler()
+log_message("Finished calling load_model_and_scaler()")
 
 # Function to make predictions
 def predict_dog_state(temperature, pulse_rate, heart_rate):
     if model is None or scaler is None:
         return "Error: Model or scaler not loaded"
     
-    input_data = pd.DataFrame([[temperature, pulse_rate, heart_rate]],
-                              columns=['temperature', 'pulse_rate', 'heart_rate'])
-
-    # Scale the numerical features
+    input_data = np.array([[temperature, pulse_rate, heart_rate]])
     input_data_scaled = scaler.transform(input_data)
 
-    # Predict state
     try:
         state = model.predict(input_data_scaled)
         return state[0]
     except Exception as e:
-        st.error(f"Error during prediction: {str(e)}")
+        log_message(f"Error during prediction: {str(e)}")
         return "Error: Unable to make prediction"
 
 # Streamlit app layout
@@ -62,10 +66,13 @@ heart_rate = st.number_input('Heart Rate (beats per minute)', min_value=50, max_
 
 # Predict button
 if st.button('Predict Health State'):
+    log_message("Prediction button clicked")
     if model is not None and scaler is not None:
         predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
         if not predicted_state.startswith("Error"):
             st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
+        else:
+            st.error(predicted_state)
     else:
         st.error("Cannot make predictions. Model or scaler not loaded.")
 
@@ -74,3 +81,9 @@ st.subheader("Normal Ranges for Reference:")
 st.write("Temperature: 99.5°F - 102.5°F")
 st.write("Pulse Rate: 70 - 120 beats per minute")
 st.write("Heart Rate: 60 - 100 beats per minute")
+
+# Display environment information
+st.subheader("Debug Information:")
+st.write(f"Current working directory: {os.getcwd()}")
+st.write(f"Files in current directory: {os.listdir('.')}")
+log_message("App finished loading")
