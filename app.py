@@ -3,10 +3,6 @@ import pandas as pd
 import joblib
 import numpy as np
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 try:
     model = joblib.load('dog_health_model.pkl')
