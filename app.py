@@ -1,10 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
+import sklearn
+import pickle
 
 # Attempt to import joblib, with a fallback to pickle
 try:
@@ -13,15 +11,22 @@ except ImportError:
     import pickle as joblib
     st.warning("Using pickle instead of joblib. Consider installing joblib for better performance.")
 
+st.write(f"scikit-learn version: {sklearn.__version__}")
+
 # Load the trained model and scaler
 @st.cache_resource
 def load_model_and_scaler():
     try:
-        model = joblib.load('dog_health_model.pkl')
-        scaler = joblib.load('scaler.pkl')
+        with open('dog_health_model.pkl', 'rb') as f:
+            model = pickle.load(f)
+        with open('scaler.pkl', 'rb') as f:
+            scaler = pickle.load(f)
         return model, scaler
     except FileNotFoundError:
         st.error("Model or scaler file not found. Please ensure the files are in the correct location.")
+        return None, None
+    except Exception as e:
+        st.error(f"Error loading model or scaler: {str(e)}")
         return None, None
 
 model, scaler = load_model_and_scaler()
@@ -38,8 +43,12 @@ def predict_dog_state(temperature, pulse_rate, heart_rate):
     input_data_scaled = scaler.transform(input_data)
 
     # Predict state
-    state = model.predict(input_data_scaled)
-    return state[0]
+    try:
+        state = model.predict(input_data_scaled)
+        return state[0]
+    except Exception as e:
+        st.error(f"Error during prediction: {str(e)}")
+        return "Error: Unable to make prediction"
 
 # Streamlit app layout
 st.title('Dog Health Analysis')
@@ -54,11 +63,9 @@ heart_rate = st.number_input('Heart Rate (beats per minute)', min_value=50, max_
 # Predict button
 if st.button('Predict Health State'):
     if model is not None and scaler is not None:
-        try:
-            predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
+        predicted_state = predict_dog_state(temperature, pulse_rate, heart_rate)
+        if not predicted_state.startswith("Error"):
             st.write(f'The predicted health state of the dog is: **{predicted_state.capitalize()}**')
-        except Exception as e:
-            st.error(f"An error occurred during prediction: {str(e)}")
     else:
         st.error("Cannot make predictions. Model or scaler not loaded.")
 
