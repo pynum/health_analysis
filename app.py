@@ -3,14 +3,9 @@ import pandas as pd
 import joblib
 import numpy as np
 
-
-try:
-    model = joblib.load('dog_health_model.pkl')
-    scaler = joblib.load('scaler.pkl')
-except Exception as e:
-    logger.error(f"Error loading model or scaler: {e}")
-    st.error("Failed to load model or scaler. Check the logs for details.")
-    st.stop()
+# Load the trained model and scaler
+model = joblib.load('dog_health_model.pkl')
+scaler = joblib.load('scaler.pkl')
 
 # Function to make predictions
 def predict_dog_state(temperature, pulse_rate, heart_rate):
