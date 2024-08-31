@@ -1,7 +1,7 @@
-pandas==1.4.4
-numpy==1.26.4
-pickle-mixin
-scikit-learn==1.1.2
-streamlit==1.21.0
+streamlit
 streamlit-option-menu
-joblib==1.2.0
+pandas
+joblib
+numpy
+scikit-learn==1.1.2
+cython
