@@ -1,7 +1,7 @@
-streamlit
+streamlit==1.26.0
 streamlit-option-menu
-pandas
-joblib
-numpy
-scikit-learn
-cython
+pandas==2.1.4
+joblib==1.4.2
+numpy==1.26.4
+scikit-learn==1.5.2
+cython==3.0.11
